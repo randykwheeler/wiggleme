@@ -28,7 +28,7 @@ std::atomic<bool> g_bRunning(false);
 HWND g_hPitchSlider, g_hYawSlider, g_hIntervalSlider, g_hDelaySlider;
 HWND g_hHumanCheck, g_hChaosCheck, g_hStartBtn, g_hStatus;
 int g_pitch = 10, g_yaw = 10;
-int g_delay = 3; // Default 3s
+int g_delay = 5; // Default 5s
 double g_interval = 5.0;
 bool g_bHumanMode = true;
 bool g_bChaosMode = false;
@@ -44,63 +44,86 @@ Point2D CubicBezier(Point2D p0, Point2D p1, Point2D p2, Point2D p3, double t) {
     Point2D p;
     p.x = uuu * p0.x + 3 * uu * t * p1.x + 3 * u * tt * p2.x + ttt * p3.x;
     p.y = uuu * p0.y + 3 * uu * t * p1.y + 3 * u * tt * p2.y + ttt * p3.y;
-    return p;
+    return pt;
+}
+
+// --- WindMouse Algorithm (Advanced Human Physics) ---
+void WindMouse(double startX, double startY, double endX, double endY, 
+               double gravity, double wind, double minWait, double maxWait, 
+               double maxStep, double targetArea) {
+    double dist = hypot(endX - startX, endY - startY);
+    double windX = 0, windY = 0, vx = 0, vy = 0;
+    double cx = startX, cy = startY;
+
+    while (dist > 1.0 && g_bRunning) {
+        wind = (double)min((int)wind, (int)dist);
+        if (dist >= targetArea) {
+            windX = windX / sqrt(3) + (rand() % (int)(wind * 2 + 1) - wind) / sqrt(5);
+            windY = windY / sqrt(3) + (rand() % (int)(wind * 2 + 1) - wind) / sqrt(5);
+        } else {
+            windX /= 2;
+            windY /= 2;
+            if (maxStep < 3) maxStep = (double)(rand() % 3 + 3);
+            else maxStep /= 1.5;
+        }
+
+        vx += windX + gravity * (endX - cx) / dist;
+        vy += windY + gravity * (endY - cy) / dist;
+
+        double vmag = hypot(vx, vy);
+        if (vmag > maxStep) {
+            double scale = (maxStep / 2.0 + (rand() % (int)(maxStep / 2.0 + 1))) / vmag;
+            vx *= scale;
+            vy *= scale;
+        }
+
+        cx += vx;
+        cy += vy;
+        SetCursorPos((int)cx, (int)cy);
+
+        dist = hypot(endX - cx, endY - cy);
+        double wait = minWait + (rand() % (int)(maxWait - minWait + 1));
+        Sleep((DWORD)wait);
+    }
 }
 
 // --- Wiggler Thread ---
 void WigglerLoop(HWND hMain) {
     int screenW = GetSystemMetrics(SM_CXSCREEN);
     int screenH = GetSystemMetrics(SM_CYSCREEN);
+    
+    // Strict Startup Delay (Silence Period)
+    for (int i = 0; i < g_delay * 10 && g_bRunning; ++i) {
+        Sleep(100);
+    }
+
     POINT lastSetPos;
     GetCursorPos(&lastSetPos);
-    auto startTime = std::chrono::steady_clock::now();
 
     while (g_bRunning) {
-
         int p = g_pitch;
         int y = g_yaw;
         double interval = g_interval;
 
         // Safety Trigger: Check if the user moved the mouse manually
-        // Grace Period: Skip for the first X seconds to allow user to release mouse
         POINT cur; GetCursorPos(&cur);
-        auto now = std::chrono::steady_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - startTime).count();
-
-        if (elapsed >= g_delay) { // Use adjustable delay
-            if (abs(cur.x - lastSetPos.x) > 20 || abs(cur.y - lastSetPos.y) > 20) { // Increased threshold slightly for 4K
-                g_bRunning = false;
-                PostMessage(hMain, WM_COMMAND, 107, 0); // Trigger stop signal
-                break;
-            }
+        if (abs(cur.x - lastSetPos.x) > 30 || abs(cur.y - lastSetPos.y) > 30) {
+            g_bRunning = false;
+            PostMessage(hMain, WM_COMMAND, 107, 0); // Trigger stop signal
+            break;
         }
 
         if (g_bChaosMode) {
             int targetX = rand() % screenW;
             int targetY = rand() % screenH;
-            int steps = 10;
-            for (int i = 0; i <= steps && g_bRunning; ++i) {
-                int nx = cur.x + (targetX - cur.x) * i / steps;
-                int ny = cur.y + (targetY - cur.y) * i / steps;
-                SetCursorPos(nx, ny);
-                lastSetPos.x = nx; lastSetPos.y = ny;
-                Sleep(5);
-            }
+            WindMouse((double)cur.x, (double)cur.y, (double)targetX, (double)targetY, 9.0, 3.0, 1.0, 5.0, 12.0, 10.0);
+            GetCursorPos(&lastSetPos);
         } else if (p > 0 || y > 0) {
             if (g_bHumanMode) {
                 int dx = (y > 0) ? (rand() % (y * 2)) - y : 0;
                 int dy = (p > 0) ? (rand() % (p * 2)) - p : 0;
-                Point2D p0 = {(double)cur.x, (double)cur.y};
-                Point2D p3 = {p0.x + dx, p0.y + dy};
-                Point2D p1 = {p0.x + dx / 2.0 + (rand() % 10 - 5), p0.y + dy / 2.0 + (rand() % 10 - 5)};
-                Point2D p2 = {p3.x - dx / 2.0 + (rand() % 10 - 5), p3.y - dy / 2.0 + (rand() % 10 - 5)};
-                int steps = 15;
-                for (int i = 0; i <= steps && g_bRunning; ++i) {
-                    Point2D pt = CubicBezier(p0, p1, p2, p3, (double)i / steps);
-                    SetCursorPos((int)pt.x, (int)pt.y);
-                    lastSetPos.x = (int)pt.x; lastSetPos.y = (int)pt.y;
-                    Sleep(10);
-                }
+                WindMouse((double)cur.x, (double)cur.y, (double)(cur.x + dx), (double)(cur.y + dy), 9.0, 3.0, 2.0, 10.0, 10.0, 8.0);
+                GetCursorPos(&lastSetPos);
             } else {
                 int dx = (y > 0) ? (rand() % (y * 2 + 1)) - y : 0;
                 int dy = (p > 0) ? (rand() % (p * 2 + 1)) - p : 0;
@@ -115,7 +138,7 @@ void WigglerLoop(HWND hMain) {
         DWORD stop = GetTickCount() + (DWORD)(interval * 1000);
         while (GetTickCount() < stop && g_bRunning) {
             GetCursorPos(&cur);
-            if (abs(cur.x - lastSetPos.x) > 15 || abs(cur.y - lastSetPos.y) > 15) {
+            if (abs(cur.x - lastSetPos.x) > 30 || abs(cur.y - lastSetPos.y) > 30) {
                 g_bRunning = false;
                 PostMessage(hMain, WM_COMMAND, 107, 0);
                 break;
@@ -150,7 +173,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         CreateWindow(L"STATIC", L"Start Delay (Seconds):", WS_CHILD | WS_VISIBLE, 20, 200, 150, 20, hwnd, NULL, NULL, NULL);
         g_hDelaySlider = CreateWindow(TRACKBAR_CLASS, L"", WS_CHILD | WS_VISIBLE | TBS_AUTOTICKS, 20, 220, 200, 30, hwnd, (HMENU)108, NULL, NULL);
         SendMessage(g_hDelaySlider, TBM_SETRANGE, TRUE, MAKELONG(2, 10));
-        SendMessage(g_hDelaySlider, TBM_SETPOS, TRUE, 3);
+        SendMessage(g_hDelaySlider, TBM_SETPOS, TRUE, 5);
 
         g_hHumanCheck = CreateWindow(L"BUTTON", L"Human Mode (Natural)", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 20, 260, 200, 20, hwnd, (HMENU)104, NULL, NULL);
         SendMessage(g_hHumanCheck, BM_SETCHECK, BST_CHECKED, 0);
