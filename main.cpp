@@ -150,7 +150,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         wchar_t exePath[MAX_PATH];
         GetModuleFileName(NULL, exePath, MAX_PATH);
         PathRemoveFileSpec(exePath);
-        std::wstring splashPath = std::wstring(exePath) + L"\\Resources\\mascot.jpg";
+        std::wstring splashPath = std::wstring(exePath) + L"\\Resources\\mascot.png";
         g_pMascotImage = Image::FromFile(splashPath.c_str());
 
         // Set font
