@@ -1,29 +1,27 @@
-<div align="center">
-  <img src="assets/branding.png" width="600" alt="Wiggle Me Logo">
-  
 # Wiggle Me! 🚀
 
 ### *The World's Most Human Mouse Simulator*
-  
-  [![GitHub Release](https://img.shields.io/github/v/release/randykwheeler/wiggleme)](https://github.com/randykwheeler/wiggleme/releases)
-  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-  
-  [**Download Latest Release**](https://github.com/randykwheeler/wiggleme/releases/latest)
-</div>
+
+![Branding Header](assets/branding.jpg)
+
+[![GitHub Release](https://img.shields.io/github/v/release/randykwheeler/wiggleme)](https://github.com/randykwheeler/wiggleme/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+[**Download Latest Release**](https://github.com/randykwheeler/wiggleme/releases/latest)
 
 ---
 
-## 💎 Why Wiggle Me?
+## 🧬 The Physics of Human Movement
 
-Unlike traditional mouse wigglers that move the cursor in robotic, linear paths, **Wiggle Me!** is built on a custom **Human-Kinematic Engine**.
+Unlike traditional mouse wigglers that move in robotic, predictable lines, **Wiggle Me!** is powered by a custom **Human-Kinematic Engine**.
 
-### 🧬 The Human Movement Difference
+### Why is this different?
 
-Most wiggling software is easily detected by modern analytics because it relies on predictable patterns. **Wiggle Me!** utilizes **Cubic Bezier Curves** to generate fluid, randomized mouse paths that mimic the actual biological tremor and arced movement of a human arm.
+Standard solutions are easily flagged by security analytics because they use linear interpolation. **Wiggle Me!** utilizes advanced **Cubic Bezier Curves** to generate fluid, non-linear mouse paths that mimic:
 
-- **Non-Linear Interpolation**: Every movement follows a natural arc, just like a real hand.
-- **Randomized Micro-Variations**: Sub-pixel micro-jittering simulates the natural instability of human touch.
-- **Dynamic Velocity**: The cursor accelerates and decelerates naturally, avoiding the constant-speed signature of bots.
+- **Biological Tremor**: Natural, slight imperfections in hand steadiness.
+- **Limb Kinematics**: The cursor follows the natural arc of a moving human arm.
+- **Dynamic Velocity**: Hand movement naturally accelerates and decelerates; our engine simulates this perfectly.
 
 ---
 
@@ -31,30 +29,23 @@ Most wiggling software is easily detected by modern analytics because it relies 
 
 ### 🌪️ Chaos Mode
 
-Need to simulate intense activity? **Chaos Mode** throws the cursor into a high-energy, randomized flight pattern across your entire screen.
+A high-velocity, synchronized panic for when you need to simulate intense screen activity across your entire workspace.
 
 ### 🛡️ Intelligent Manual Override
 
-The moment you move your physical mouse, **Wiggle Me!** detects it and **instantly stops**. You never have to "fight" the app for control.
+The moment you touch your physical mouse, **Wiggle Me!** detects the interference and **instantly terminates**. You are always in control.
 
 ### ⚡ Lightning Fast & Lightweight
 
-Built with pure C++ and the native Win32 API for zero overhead. No dependencies, no bloat—just pure speed.
+Built in pure C++ with the native Win32 API. Zero .NET overhead, zero bloat, and near-zero CPU usage.
 
 ---
 
-## 🎨 Clean Interface
+## 🚀 Installation
 
-- **System-Native UI**: Matches your Windows theme perfectly.
-- **Animated Mascot**: A reactive, wiggling character providing instant feedback.
-
----
-
-## 🚀 Quick Start
-
-1. **Download**: Grab the [latest Release](https://github.com/randykwheeler/wiggleme/releases/latest).
-2. **Extract**: Unzip the folder.
-3. **Run**: Launch `WiggleMe.exe`.
+1. **Download**: Grab the [latest Setup.exe](https://github.com/randykwheeler/wiggleme/releases/latest).
+2. **Install**: Run the installer to add Wiggle Me! to your Program Files and Desktop.
+3. **Wiggle**: Launch and stay active.
 
 ---
 
@@ -69,6 +60,4 @@ build.bat
 
 ---
 
-<div align="center">
-  <sub>© 2026 Wiggle Me! | Built for Performance & Privacy</sub>
-</div>
+*© 2026 Wiggle Me! | Built for Performance & Privacy*

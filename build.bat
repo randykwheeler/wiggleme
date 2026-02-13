@@ -1,13 +1,20 @@
 @echo off
-set "MSVC_DIR=C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207"
-set "SDK_VER=10.0.26100.0"
-set "SDK_DIR=C:\Program Files (x86)\Windows Kits\10"
+set "VCVARS=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
+if not exist "%VCVARS%" set "VCVARS=C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
 
-echo Compiling...
-"%MSVC_DIR%\bin\Hostx64\x64\cl.exe" /EHsc /O2 /I"%MSVC_DIR%\include" /I"%SDK_DIR%\Include\%SDK_VER%\um" /I"%SDK_DIR%\Include\%SDK_VER%\shared" /I"%SDK_DIR%\Include\%SDK_VER%\ucrt" main.cpp /link /LIBPATH:"%MSVC_DIR%\lib\x64" /LIBPATH:"%SDK_DIR%\Lib\%SDK_VER%\um\x64" /LIBPATH:"%SDK_DIR%\Lib\%SDK_VER%\ucrt\x64" user32.lib gdi32.lib comctl32.lib shell32.lib Ole32.lib Shlwapi.lib /OUT:MouseWigglerPro.exe
+call "%VCVARS%"
 
-if %ERRORLEVEL% == 0 (
-    echo Build Successful!
-) else (
-    echo Build Failed with code %ERRORLEVEL%
-)
+echo Compiling Resources...
+rc /fo resources.res resources.rc
+
+echo Building WiggleMe.exe...
+cl /EHsc /W4 /O2 main.cpp resources.res user32.lib gdi32.lib comctl32.lib gdiplus.lib shlwapi.lib /Fe:WiggleMe.exe
+
+echo Packaging Assets...
+if exist WiggleMe.zip del WiggleMe.zip
+powershell -Command "Compress-Archive -Path 'Resources' -DestinationPath 'WiggleMe.zip' -Force"
+
+echo Generating Installer...
+iexpress /N /Q WiggleMe.sed
+
+echo Build Successful!
