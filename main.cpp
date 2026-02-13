@@ -104,21 +104,28 @@ void WigglerLoop(HWND hMain) {
         int y = g_yaw;
         double interval = g_interval;
 
-        // Safety Trigger: Check if the user moved the mouse manually
-        // GRACE PERIOD: Ignore all movement for the first g_delay seconds
+        // Safety Trigger check
         POINT cur; GetCursorPos(&cur);
-        if (elapsed >= (double)g_delay) {
+        
+        if (elapsed < (double)g_delay) {
+            // GRACE PERIOD: Strictly ignore all movement.
+            // Keep status updated for user clarity.
+            wchar_t graceMsg[100];
+            swprintf(graceMsg, 100, L"Grace Period: %.1fs remaining...", (double)g_delay - elapsed);
+            SetWindowText(g_hStatus, graceMsg);
+            
+            lastSetPos = cur; // sync
+        } else {
+            // NORMAL OPERATION: Detect manual movement
             if (abs(cur.x - lastSetPos.x) > 30 || abs(cur.y - lastSetPos.y) > 30) {
                 g_bRunning = false;
                 PostMessage(hMain, WM_COMMAND, 107, 0); // Trigger stop signal
                 break;
             }
-        } else {
-            // Keep lastSetPos synced during grace period to prevent "snap-back" trigger immediately after
-            lastSetPos = cur;
+            SetWindowText(g_hStatus, L"Wiggling... Move mouse to stop.");
         }
 
-        if (elapsed >= (double)g_delay) {
+        if (g_bRunning && elapsed >= (double)g_delay) {
             if (g_bChaosMode) {
                 int targetX = rand() % screenW;
                 int targetY = rand() % screenH;
@@ -146,16 +153,19 @@ void WigglerLoop(HWND hMain) {
         while (GetTickCount() < stop && g_bRunning) {
             GetCursorPos(&cur);
             auto nowCheck = std::chrono::steady_clock::now();
-            double elapsedCheck = std::chrono::duration_cast<std::chrono::milliseconds>(nowCheck - startTime).count() / 1000.0;
+            double elap = std::chrono::duration_cast<std::chrono::milliseconds>(nowCheck - startTime).count() / 1000.0;
             
-            if (elapsedCheck >= (double)g_delay) {
+            if (elap < (double)g_delay) {
+                lastSetPos = cur;
+                wchar_t graceMsg[100];
+                swprintf(graceMsg, 100, L"Grace Period: %.1fs remaining...", (double)g_delay - elap);
+                SetWindowText(g_hStatus, graceMsg);
+            } else {
                 if (abs(cur.x - lastSetPos.x) > 30 || abs(cur.y - lastSetPos.y) > 30) {
                     g_bRunning = false;
                     PostMessage(hMain, WM_COMMAND, 107, 0);
                     break;
                 }
-            } else {
-                lastSetPos = cur;
             }
             Sleep(100);
         }
@@ -249,7 +259,16 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 g_bRunning = true;
                 g_bHumanMode = (SendMessage(g_hHumanCheck, BM_GETCHECK, 0, 0) == BST_CHECKED);
                 g_bChaosMode = (SendMessage(g_hChaosCheck, BM_GETCHECK, 0, 0) == BST_CHECKED);
-                SetWindowText(g_hStartBtn, L"STOP!");
+                SetWindowText(g_hStartBtn, L"STOP (Lock: 5s)");
+                EnableWindow(g_hStartBtn, FALSE); 
+                std::thread([](HWND btn, HWND hwnd) {
+                    Sleep(5000);
+                    if (g_bRunning) {
+                        SetWindowText(btn, L"STOP!");
+                        EnableWindow(btn, TRUE);
+                    }
+                }, g_hStartBtn, hwnd).detach();
+
                 SetWindowText(g_hStatus, L"Wiggling... Move mouse to stop.");
                 std::thread(WigglerLoop, hwnd).detach();
             } else {
@@ -262,6 +281,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         else if (cmdId == 107) { // Safety stop signal
             g_bRunning = false;
             SetWindowText(g_hStartBtn, L"WIGGLE ME!");
+            EnableWindow(g_hStartBtn, TRUE);
             SetWindowText(g_hStatus, L"Manual override detected!");
             InvalidateRect(hwnd, NULL, TRUE);
         }
