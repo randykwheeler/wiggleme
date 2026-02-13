@@ -25,14 +25,14 @@ using namespace Gdiplus;
 
 // --- Globals ---
 std::atomic<bool> g_bRunning(false);
-std::atomic<int> g_pitch(5);
-std::atomic<int> g_yaw(5);
-std::atomic<double> g_interval(5.0);
-std::atomic<bool> g_bHumanMode(true);
-std::atomic<bool> g_bChaosMode(false);
+HWND g_hPitchSlider, g_hYawSlider, g_hIntervalSlider, g_hDelaySlider;
+HWND g_hHumanCheck, g_hChaosCheck, g_hStartBtn, g_hStatus;
+int g_pitch = 10, g_yaw = 10;
+int g_delay = 3; // Default 3s
+double g_interval = 5.0;
+bool g_bHumanMode = true;
+bool g_bChaosMode = false;
 
-HWND g_hPitchSlider, g_hYawSlider, g_hIntervalSlider, g_hHumanCheck, g_hChaosCheck, g_hStartBtn;
-HWND g_hStatus;
 Image* g_pMascotImage = NULL;
 ULONG_PTR gdiplusToken;
 
@@ -62,13 +62,13 @@ void WigglerLoop(HWND hMain) {
         double interval = g_interval;
 
         // Safety Trigger: Check if the user moved the mouse manually
-        // Grace Period: Skip for the first 2 seconds to allow user to release mouse
+        // Grace Period: Skip for the first X seconds to allow user to release mouse
         POINT cur; GetCursorPos(&cur);
         auto now = std::chrono::steady_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - startTime).count();
 
-        if (elapsed >= 2) {
-            if (abs(cur.x - lastSetPos.x) > 15 || abs(cur.y - lastSetPos.y) > 15) {
+        if (elapsed >= g_delay) { // Use adjustable delay
+            if (abs(cur.x - lastSetPos.x) > 20 || abs(cur.y - lastSetPos.y) > 20) { // Increased threshold slightly for 4K
                 g_bRunning = false;
                 PostMessage(hMain, WM_COMMAND, 107, 0); // Trigger stop signal
                 break;
@@ -147,14 +147,19 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         SendMessage(g_hIntervalSlider, TBM_SETRANGE, TRUE, MAKELONG(1, 60));
         SendMessage(g_hIntervalSlider, TBM_SETPOS, TRUE, 5);
 
-        g_hHumanCheck = CreateWindow(L"BUTTON", L"Human Mode (Natural)", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 20, 210, 200, 20, hwnd, (HMENU)104, NULL, NULL);
+        CreateWindow(L"STATIC", L"Start Delay (Seconds):", WS_CHILD | WS_VISIBLE, 20, 200, 150, 20, hwnd, NULL, NULL, NULL);
+        g_hDelaySlider = CreateWindow(TRACKBAR_CLASS, L"", WS_CHILD | WS_VISIBLE | TBS_AUTOTICKS, 20, 220, 200, 30, hwnd, (HMENU)108, NULL, NULL);
+        SendMessage(g_hDelaySlider, TBM_SETRANGE, TRUE, MAKELONG(2, 10));
+        SendMessage(g_hDelaySlider, TBM_SETPOS, TRUE, 3);
+
+        g_hHumanCheck = CreateWindow(L"BUTTON", L"Human Mode (Natural)", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 20, 260, 200, 20, hwnd, (HMENU)104, NULL, NULL);
         SendMessage(g_hHumanCheck, BM_SETCHECK, BST_CHECKED, 0);
 
-        g_hChaosCheck = CreateWindow(L"BUTTON", L"CHAOS MODE!", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 20, 240, 200, 20, hwnd, (HMENU)106, NULL, NULL);
+        g_hChaosCheck = CreateWindow(L"BUTTON", L"CHAOS MODE!", WS_CHILD | WS_VISIBLE | BS_AUTOCHECKBOX, 20, 290, 200, 20, hwnd, (HMENU)106, NULL, NULL);
 
-        g_hStartBtn = CreateWindow(L"BUTTON", L"WIGGLE ME!", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 20, 280, 200, 50, hwnd, (HMENU)105, NULL, NULL);
+        g_hStartBtn = CreateWindow(L"BUTTON", L"WIGGLE ME!", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 20, 320, 200, 50, hwnd, (HMENU)105, NULL, NULL);
         
-        g_hStatus = CreateWindow(L"STATIC", L"Move mouse to stop!", WS_CHILD | WS_VISIBLE | SS_CENTER, 20, 340, 200, 20, hwnd, NULL, NULL, NULL);
+        g_hStatus = CreateWindow(L"STATIC", L"Move mouse to stop!", WS_CHILD | WS_VISIBLE | SS_CENTER, 20, 380, 200, 20, hwnd, NULL, NULL, NULL);
 
         // Load Mascot
         wchar_t exePath[MAX_PATH];
@@ -197,6 +202,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         g_pitch = (int)SendMessage(g_hPitchSlider, TBM_GETPOS, 0, 0);
         g_yaw = (int)SendMessage(g_hYawSlider, TBM_GETPOS, 0, 0);
         g_interval = (double)SendMessage(g_hIntervalSlider, TBM_GETPOS, 0, 0);
+        g_delay = (int)SendMessage(g_hDelaySlider, TBM_GETPOS, 0, 0);
         return 0;
     }
     case WM_COMMAND: {
@@ -251,7 +257,7 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE, PWSTR, int nCmdShow) {
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     RegisterClass(&wc);
 
-    HWND hwnd = CreateWindowEx(0, L"WiggleMeClass", L"Wiggle Me!", WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, 380, 420, NULL, NULL, hInst, NULL);
+    HWND hwnd = CreateWindowEx(0, L"WiggleMeClass", L"Wiggle Me!", WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, 380, 460, NULL, NULL, hInst, NULL);
     if (!hwnd) return 0;
 
     ShowWindow(hwnd, nCmdShow);
