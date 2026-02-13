@@ -44,7 +44,7 @@ Point2D CubicBezier(Point2D p0, Point2D p1, Point2D p2, Point2D p3, double t) {
     Point2D p;
     p.x = uuu * p0.x + 3 * uu * t * p1.x + 3 * u * tt * p2.x + ttt * p3.x;
     p.y = uuu * p0.y + 3 * uu * t * p1.y + 3 * u * tt * p2.y + ttt * p3.y;
-    return pt;
+    return p;
 }
 
 // --- WindMouse Algorithm (Advanced Human Physics) ---
@@ -92,56 +92,70 @@ void WigglerLoop(HWND hMain) {
     int screenW = GetSystemMetrics(SM_CXSCREEN);
     int screenH = GetSystemMetrics(SM_CYSCREEN);
     
-    // Strict Startup Delay (Silence Period)
-    for (int i = 0; i < g_delay * 10 && g_bRunning; ++i) {
-        Sleep(100);
-    }
-
     POINT lastSetPos;
     GetCursorPos(&lastSetPos);
+    auto startTime = std::chrono::steady_clock::now();
 
     while (g_bRunning) {
+        auto now = std::chrono::steady_clock::now();
+        double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count() / 1000.0;
+
         int p = g_pitch;
         int y = g_yaw;
         double interval = g_interval;
 
         // Safety Trigger: Check if the user moved the mouse manually
+        // GRACE PERIOD: Ignore all movement for the first g_delay seconds
         POINT cur; GetCursorPos(&cur);
-        if (abs(cur.x - lastSetPos.x) > 30 || abs(cur.y - lastSetPos.y) > 30) {
-            g_bRunning = false;
-            PostMessage(hMain, WM_COMMAND, 107, 0); // Trigger stop signal
-            break;
+        if (elapsed >= (double)g_delay) {
+            if (abs(cur.x - lastSetPos.x) > 30 || abs(cur.y - lastSetPos.y) > 30) {
+                g_bRunning = false;
+                PostMessage(hMain, WM_COMMAND, 107, 0); // Trigger stop signal
+                break;
+            }
+        } else {
+            // Keep lastSetPos synced during grace period to prevent "snap-back" trigger immediately after
+            lastSetPos = cur;
         }
 
-        if (g_bChaosMode) {
-            int targetX = rand() % screenW;
-            int targetY = rand() % screenH;
-            WindMouse((double)cur.x, (double)cur.y, (double)targetX, (double)targetY, 9.0, 3.0, 1.0, 5.0, 12.0, 10.0);
-            GetCursorPos(&lastSetPos);
-        } else if (p > 0 || y > 0) {
-            if (g_bHumanMode) {
-                int dx = (y > 0) ? (rand() % (y * 2)) - y : 0;
-                int dy = (p > 0) ? (rand() % (p * 2)) - p : 0;
-                WindMouse((double)cur.x, (double)cur.y, (double)(cur.x + dx), (double)(cur.y + dy), 9.0, 3.0, 2.0, 10.0, 10.0, 8.0);
+        if (elapsed >= (double)g_delay) {
+            if (g_bChaosMode) {
+                int targetX = rand() % screenW;
+                int targetY = rand() % screenH;
+                WindMouse((double)cur.x, (double)cur.y, (double)targetX, (double)targetY, 9.0, 3.0, 1.0, 5.0, 12.0, 10.0);
                 GetCursorPos(&lastSetPos);
-            } else {
-                int dx = (y > 0) ? (rand() % (y * 2 + 1)) - y : 0;
-                int dy = (p > 0) ? (rand() % (p * 2 + 1)) - p : 0;
-                mouse_event(MOUSEEVENTF_MOVE, dx, dy, 0, 0);
-                GetCursorPos(&lastSetPos);
-                Sleep(50);
-                mouse_event(MOUSEEVENTF_MOVE, -dx, -dy, 0, 0);
-                GetCursorPos(&lastSetPos);
+            } else if (p > 0 || y > 0) {
+                if (g_bHumanMode) {
+                    int dx = (y > 0) ? (rand() % (y * 2)) - y : 0;
+                    int dy = (p > 0) ? (rand() % (p * 2)) - p : 0;
+                    WindMouse((double)cur.x, (double)cur.y, (double)(cur.x + dx), (double)(cur.y + dy), 9.0, 3.0, 2.0, 10.0, 10.0, 8.0);
+                    GetCursorPos(&lastSetPos);
+                } else {
+                    int dx = (y > 0) ? (rand() % (y * 2 + 1)) - y : 0;
+                    int dy = (p > 0) ? (rand() % (p * 2 + 1)) - p : 0;
+                    mouse_event(MOUSEEVENTF_MOVE, dx, dy, 0, 0);
+                    GetCursorPos(&lastSetPos);
+                    Sleep(50);
+                    mouse_event(MOUSEEVENTF_MOVE, -dx, -dy, 0, 0);
+                    GetCursorPos(&lastSetPos);
+                }
             }
         }
 
         DWORD stop = GetTickCount() + (DWORD)(interval * 1000);
         while (GetTickCount() < stop && g_bRunning) {
             GetCursorPos(&cur);
-            if (abs(cur.x - lastSetPos.x) > 30 || abs(cur.y - lastSetPos.y) > 30) {
-                g_bRunning = false;
-                PostMessage(hMain, WM_COMMAND, 107, 0);
-                break;
+            auto nowCheck = std::chrono::steady_clock::now();
+            double elapsedCheck = std::chrono::duration_cast<std::chrono::milliseconds>(nowCheck - startTime).count() / 1000.0;
+            
+            if (elapsedCheck >= (double)g_delay) {
+                if (abs(cur.x - lastSetPos.x) > 30 || abs(cur.y - lastSetPos.y) > 30) {
+                    g_bRunning = false;
+                    PostMessage(hMain, WM_COMMAND, 107, 0);
+                    break;
+                }
+            } else {
+                lastSetPos = cur;
             }
             Sleep(100);
         }
