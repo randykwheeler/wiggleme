@@ -11,17 +11,17 @@
 
 ---
 
-## 🧬 The Physics of Human Movement
+## 🚀 Wiggle Me! - Human-Kinematic Engine Ultra
 
-Unlike traditional mouse wigglers that move in robotic, predictable lines, **Wiggle Me!** is powered by a custom **Human-Kinematic Engine**.
+**Wiggle Me!** is not just another mouse wiggler. It is a high-fidelity **human-kinematic simulator** designed to be indistinguishable from a real person's hand movement.
 
-### Why is this different?
+### 🧠 The "WindMouse" Physics Engine
 
-Standard solutions are easily flagged by security analytics because they use linear interpolation. **Wiggle Me!** utilizes advanced **Cubic Bezier Curves** to generate fluid, non-linear mouse paths that mimic:
+Our latest version is powered by the **Human-Kinematic Engine Ultra**, which uses the sophisticated **WindMouse** algorithm. Unlike robotic "back and forth" wiggle apps, Wiggle Me! treats the cursor as a physical object influenced by:
 
-- **Biological Tremor**: Natural, slight imperfections in hand steadiness.
-- **Limb Kinematics**: The cursor follows the natural arc of a moving human arm.
-- **Dynamic Velocity**: Hand movement naturally accelerates and decelerates; our engine simulates this perfectly.
+- **Gravitational Pull**: Smoothly accelerating toward its destination.
+- **Random Wind Forces**: Real-time turbulent fluctuations that create authentic micro-shakes and natural curves.
+- **Organic Inertia**: Perfectly modeled momentum that mirrors the biological movement of human muscles.
 
 ---
 
