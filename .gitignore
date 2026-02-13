@@ -1,0 +1,14 @@
+# MSVC Build Artifacts
+*.obj
+*.exe
+*.pdb
+*.ilk
+*.suo
+*.user
+*.log
+*.tlog
+*.lastbuildstate
+*.idb
+
+# Folders
+Resources/mascot.jpg.tmp
