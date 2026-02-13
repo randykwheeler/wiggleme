@@ -1,0 +1,21 @@
+;*** BEGIN **********************************************************
+;**                                                                **
+;** Automatically generated on: Fri Feb 13 09:27:29 2026           **
+;**                                                                **
+;** MakeCAB Version: 5.00                                 **
+;**                                                                **
+;*** BEGIN **********************************************************
+
+
+[SourceDisksNames]
+1=Application Source Media,~WiggleMe_Setup.CAB,0
+
+[SourceDisksFiles]
+WiggleMe.exe=1,,134656,0
+SetupHelper.ps1=1,,2478,0
+WiggleMe.zip=1,,180412,0
+;*** END ************************************************************
+;**                                                                **
+;** Automatically generated on: Fri Feb 13 09:27:29 2026           **
+;**                                                                **
+;*** END ************************************************************

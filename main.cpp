@@ -12,6 +12,8 @@
 #include <ctime>
 #include <cmath>
 #include <shlwapi.h>
+#include <chrono>
+
 
 #pragma comment(lib, "comctl32.lib")
 #pragma comment(lib, "shlwapi.lib")
@@ -51,18 +53,26 @@ void WigglerLoop(HWND hMain) {
     int screenH = GetSystemMetrics(SM_CYSCREEN);
     POINT lastSetPos;
     GetCursorPos(&lastSetPos);
+    auto startTime = std::chrono::steady_clock::now();
 
     while (g_bRunning) {
+
         int p = g_pitch;
         int y = g_yaw;
         double interval = g_interval;
 
         // Safety Trigger: Check if the user moved the mouse manually
+        // Grace Period: Skip for the first 2 seconds to allow user to release mouse
         POINT cur; GetCursorPos(&cur);
-        if (abs(cur.x - lastSetPos.x) > 15 || abs(cur.y - lastSetPos.y) > 15) {
-            g_bRunning = false;
-            PostMessage(hMain, WM_COMMAND, 107, 0); // Trigger stop signal
-            break;
+        auto now = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - startTime).count();
+
+        if (elapsed >= 2) {
+            if (abs(cur.x - lastSetPos.x) > 15 || abs(cur.y - lastSetPos.y) > 15) {
+                g_bRunning = false;
+                PostMessage(hMain, WM_COMMAND, 107, 0); // Trigger stop signal
+                break;
+            }
         }
 
         if (g_bChaosMode) {
