@@ -16,6 +16,7 @@ if ($Action -eq "Install") {
     $ScriptDir = Split-Path $MyInvocation.MyCommand.Path
     Copy-Item "$ScriptDir\WiggleMe.exe" $InstallDir -Force
     Copy-Item "$ScriptDir\Resources" $InstallDir -Recurse -Force
+    Copy-Item "$ScriptDir\SetupHelper.ps1" $InstallDir -Force
 
     # 3. Create Shortcuts
     $WshShell = New-Object -ComObject WScript.Shell
@@ -32,7 +33,7 @@ if ($Action -eq "Install") {
     # 4. Register Uninstaller
     New-Item -Path $UninstallKey -Force
     New-ItemProperty -Path $UninstallKey -Name "DisplayName" -Value $AppName -PropertyType String -Force
-    New-ItemProperty -Path $UninstallKey -Name "UninstallString" -Value "powershell.exe -ExecutionPolicy Bypass -File `"$ExePath`" -Action Uninstall" -PropertyType String -Force
+    New-ItemProperty -Path $UninstallKey -Name "UninstallString" -Value "powershell.exe -ExecutionPolicy Bypass -File `"$InstallDir\SetupHelper.ps1`" -Action Uninstall" -PropertyType String -Force
     New-ItemProperty -Path $UninstallKey -Name "DisplayIcon" -Value $ExePath -PropertyType String -Force
     New-ItemProperty -Path $UninstallKey -Name "Publisher" -Value "Randy K. Wheeler" -PropertyType String -Force
 
